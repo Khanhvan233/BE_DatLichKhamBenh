@@ -29,4 +29,4 @@ class MyConnectPro:
             return result.fetchall()
         finally:
             session.close()
-print('oke')
+    
