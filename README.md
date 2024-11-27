@@ -1,4 +1,4 @@
-Được việt bằng python 3.12.3
+Được viết bằng python 3.12.3
 
 Các thư viện khác được chứ ở file Library.txt ở folder Resource
 
