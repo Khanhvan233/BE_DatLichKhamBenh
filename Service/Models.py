@@ -1,21 +1,23 @@
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Text, SmallInteger, DECIMAL, CHAR, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Text, SmallInteger, DECIMAL, CHAR, DateTime, VARCHAR
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import declarative_base
 from Service.Models import *
 
 Base = declarative_base()
 
-# class BacSi(Base):
-#     __tablename__ = "bacsi"
-#     id = Column('Id', Integer, primary_key=True, autoincrement=True)
-#     hoc_ham = Column('HocHam', String(50), nullable=False)
-#     ho = Column('Ho', CHAR(10), nullable=False)
-#     ten = Column('Ten', CHAR(10), nullable=False)
-#     hinh_anh = Column('Hinh_anh', CHAR(20), nullable=True)
-#     mo_ta = Column('Mo_ta', String(4000), nullable=True)
-#     ngay_bd_hanh_y = Column('Ngay_BD_Hanh_y', Date, nullable=False)
-#     password = Column('Password', String(50), nullable=False)
+class BacSi(Base):
+    __tablename__ = "bacsi"
+
+    id = Column('Id', Integer, primary_key=True, autoincrement=True)
+    hoc_ham = Column('HocHam', String(50), nullable=False)
+    ho = Column('Ho', CHAR(10), nullable=False)
+    ten = Column('Ten', CHAR(10), nullable=False)
+    hinh_anh = Column('Hinh_anh', VARCHAR(255), nullable=True)
+    mo_ta = Column('Mo_ta', String(4000), nullable=True)
+    ngay_bd_hanh_y = Column('Ngay_BD_Hanh_y', Date, nullable=False)
+    password = Column('Password', String(50), nullable=False)
+    username = Column('Username', CHAR(64), nullable=False)
     
 # class BangCapChungChi(Base):
 #     __tablename__ = "bangcap_chungchi"
