@@ -245,3 +245,251 @@ def adddoctor():
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+    
+
+@auth_blueprint.route('/getUser/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user(user_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or not isinstance(identity, dict) or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        if identity["role"] != admin:  # Chỉ admin mới có quyền xem thông tin người dùng
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Tìm người dùng theo ID
+        user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
+
+        if not user:
+            return jsonify({"msg": "Người dùng không tồn tại"}), 404
+
+        # Trả về thông tin người dùng
+        return jsonify({
+            "id": user.id,
+            "username": user.username,
+            "ho": user.ho,
+            "ten": user.ten,
+            "sdt": user.sdt,
+            "email": user.email
+        }), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+
+@auth_blueprint.route('/getAllUsers', methods=['GET'])
+@jwt_required()
+def get_all_users():
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or not isinstance(identity, dict) or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        if identity["role"] != admin:  # Chỉ admin mới có quyền xem danh sách người dùng
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Lấy danh sách tất cả người dùng
+        users = session_db.query(ClientAccount).all()
+        user_list = [{
+            "id": user.id,
+            "username": user.username,
+            "ho": user.ho,
+            "ten": user.ten,
+            "sdt": user.sdt,
+            "email": user.email
+        } for user in users]
+
+        return jsonify(user_list), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+
+@auth_blueprint.route('/getDoctor/<int:doctor_id>', methods=['GET'])
+@jwt_required()
+def get_doctor(doctor_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or not isinstance(identity, dict) or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        if identity["role"] != admin:  # Chỉ admin mới có quyền xem thông tin bác sĩ
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Tìm bác sĩ theo ID
+        doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
+
+        if not doctor:
+            return jsonify({"msg": "Bác sĩ không tồn tại"}), 404
+
+        # Trả về thông tin bác sĩ
+        return jsonify({
+            "id": doctor.id,
+            "hoc_ham": doctor.hoc_ham,
+            "ho": doctor.ho,
+            "ten": doctor.ten,
+            "hinh_anh": doctor.hinh_anh,
+            "mo_ta": doctor.mo_ta,
+            "ngay_bd_hanh_y": str(doctor.ngay_bd_hanh_y),
+            "username": doctor.username
+        }), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+
+@auth_blueprint.route('/getAllDoctors', methods=['GET'])
+@jwt_required()
+def get_all_doctors():
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or not isinstance(identity, dict) or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        if identity["role"] != admin:  # Chỉ admin mới có quyền xem danh sách bác sĩ
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Lấy danh sách tất cả bác sĩ
+        doctors = session_db.query(BacSi).all()
+        doctor_list = [{
+            "id": doctor.id,
+            "hoc_ham": doctor.hoc_ham,
+            "ho": doctor.ho,
+            "ten": doctor.ten,
+            "hinh_anh": doctor.hinh_anh,
+            "mo_ta": doctor.mo_ta,
+            "ngay_bd_hanh_y": str(doctor.ngay_bd_hanh_y),
+            "username": doctor.username
+        } for doctor in doctors]
+
+        return jsonify(doctor_list), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/deleteUser/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Kiểm tra xem user có tồn tại không
+        user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
+        if not user:
+            return jsonify({"msg": "User không tồn tại"}), 404
+
+        # Xóa user
+        session_db.delete(user)
+        session_db.commit()
+
+        return jsonify({"msg": "Xóa user thành công"}), 200
+    except Exception as e:
+        session_db.rollback()
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/deleteDoctor/<int:doctor_id>', methods=['DELETE'])
+@jwt_required()
+def delete_doctor(doctor_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Kiểm tra xem doctor có tồn tại không
+        doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
+        if not doctor:
+            return jsonify({"msg": "Doctor không tồn tại"}), 404
+
+        # Xóa doctor
+        session_db.delete(doctor)
+        session_db.commit()
+
+        return jsonify({"msg": "Xóa doctor thành công"}), 200
+    except Exception as e:
+        session_db.rollback()
+        return jsonify({"msg": str(e)}), 500
+
+
+@auth_blueprint.route('/editUser/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def edit_user(user_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Kiểm tra xem user có tồn tại không
+        user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
+        if not user:
+            return jsonify({"msg": "User không tồn tại"}), 404
+
+        # Lấy dữ liệu từ request
+        data = request.json
+        user.username = data.get('username', user.username)
+        user.password = data.get('password', user.password)
+        user.ho = data.get('ho', user.ho)
+        user.ten = data.get('ten', user.ten)
+        user.sdt = data.get('sdt', user.sdt)
+        user.email = data.get('email', user.email)
+
+        # Lưu thay đổi vào database
+        session_db.commit()
+        return jsonify({"msg": "Chỉnh sửa user thành công"}), 200
+
+    except IntegrityError:
+        session_db.rollback()
+        return jsonify({"msg": "Tên đăng nhập đã tồn tại"}), 400
+    except Exception as e:
+        session_db.rollback()
+        return jsonify({"msg": str(e)}), 500
+
+
+@auth_blueprint.route('/editDoctor/<int:doctor_id>', methods=['PUT'])
+@jwt_required()
+def edit_doctor(doctor_id):
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
+
+        # Kiểm tra xem doctor có tồn tại không
+        doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
+        if not doctor:
+            return jsonify({"msg": "Doctor không tồn tại"}), 404
+
+        # Lấy dữ liệu từ request
+        data = request.json
+        doctor.hoc_ham = data.get('hoc_ham', doctor.hoc_ham)
+        doctor.ho = data.get('ho', doctor.ho)
+        doctor.ten = data.get('ten', doctor.ten)
+        doctor.hinh_anh = data.get('hinh_anh', doctor.hinh_anh)
+        doctor.mo_ta = data.get('mo_ta', doctor.mo_ta)
+        doctor.ngay_bd_hanh_y = data.get('ngay_bd_hanh_y', doctor.ngay_bd_hanh_y)
+        doctor.password = data.get('password', doctor.password)
+        doctor.username = data.get('username', doctor.username)
+
+        # Lưu thay đổi vào database
+        session_db.commit()
+        return jsonify({"msg": "Chỉnh sửa doctor thành công"}), 200
+
+    except IntegrityError:
+        session_db.rollback()
+        return jsonify({"msg": "Tên đăng nhập đã tồn tại"}), 400
+    except Exception as e:
+        session_db.rollback()
+        return jsonify({"msg": str(e)}), 500
