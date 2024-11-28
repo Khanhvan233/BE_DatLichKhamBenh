@@ -27,12 +27,14 @@ CREATE TABLE `bacsi` (
   `HocHam` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `Ho` char(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `Ten` char(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `Hinh_anh` char(20) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
+  `Hinh_anh` varchar(255) DEFAULT NULL,
   `Mo_ta` varchar(4000) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   `Ngay_BD_Hanh_y` date NOT NULL,
   `Password` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  PRIMARY KEY (`Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `Username` varchar(500) NOT NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `unique_username` (`Username`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,7 +43,7 @@ CREATE TABLE `bacsi` (
 
 LOCK TABLES `bacsi` WRITE;
 /*!40000 ALTER TABLE `bacsi` DISABLE KEYS */;
-INSERT INTO `bacsi` VALUES (1,'BS.','Nguyễn','Thành Long',NULL,'123','2003-09-09','123'),(2,'BS.','Lê','Anh Tình',NULL,'123','2003-09-09','123'),(3,'BS.','Trần Ngọc','Khánh Văn',NULL,'123','2003-09-09','123'),(4,'BS.','Vũ','Đức Trọng',NULL,'123','2003-09-09','123'),(5,'Ths.Bs.','Nguyễn','A',NULL,'123','2003-09-09','123');
+INSERT INTO `bacsi` VALUES (1,'BS.','Nguyễn','Thành Long',NULL,'123','2003-09-09','123','van'),(2,'BS.','Lê','Anh Tình',NULL,'123','2003-09-09','123','faker'),(3,'BS.','Trần Ngọc','Khánh Văn',NULL,'123','2003-09-09','123','oner'),(4,'BS.','Vũ','Đức Trọng',NULL,'123','2003-09-09','123','keria'),(5,'Ths.Bs.','Nguyễn','A',NULL,'123','2003-09-09','123','gumayusi'),(7,'Thạc sĩ','Nguyễn','Văn C','new-image-link.jpg','Bác sĩ chuyên khoa da liễu.','2022-05-01','new_password','doctor_new');
 /*!40000 ALTER TABLE `bacsi` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -89,8 +91,9 @@ CREATE TABLE `client_account` (
   `Ten` varchar(50) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `SDT` decimal(10,0) NOT NULL,
   `Email` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
-  PRIMARY KEY (`Id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `unique_username` (`Username`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -99,7 +102,7 @@ CREATE TABLE `client_account` (
 
 LOCK TABLES `client_account` WRITE;
 /*!40000 ALTER TABLE `client_account` DISABLE KEYS */;
-INSERT INTO `client_account` VALUES (1,'pakamon','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(2,'sakura','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(3,'neko','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(4,'chan','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com');
+INSERT INTO `client_account` VALUES (1,'pakamon','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(2,'sakura','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(3,'neko','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(4,'chan','123','Nguyễn','Thành Long',123456789,'ttt@gmail.com'),(5,'van','1','Khánh','Văn',32654654,'vanne@gmail.com'),(12,'new_username','new_password','Nguyễn','Văn A',1234567890,'newemail@example.com');
 /*!40000 ALTER TABLE `client_account` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -381,4 +384,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-27 15:37:40
+-- Dump completed on 2024-11-28 16:15:51
