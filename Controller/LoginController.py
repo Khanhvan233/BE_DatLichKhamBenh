@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, json
 from flask import request
 from flask import jsonify
 from flask import abort, redirect
@@ -70,7 +70,10 @@ def login():
                 "userID": client.id,
                 "username": client.ten
             }
-        accessToken = create_access_token(identity=idenInfo, fresh=True)
+        idenInfoStr = json.dumps(idenInfo, ensure_ascii=False)
+        accessToken = create_access_token(identity=idenInfoStr, fresh=True)
+        print(f"Generated identity: {idenInfo}")
+        print(f"Generated token: {accessToken}")
         # Trả về các token trong response
         response = jsonify({
             "msg": "Đăng nhập thành công",
@@ -120,7 +123,7 @@ def loginDoctor():
             }
 
         accessToken = create_access_token(identity=idenInfo, fresh=True)
-        
+
         # Trả về các token trong response
         response = jsonify({
             "msg": "Đăng nhập thành công",  
@@ -142,7 +145,8 @@ def addUser():
     # Kiểm tra quyền admin từ token
     try:
         identity = get_jwt_identity()
-        
+        identity = json.loads(identity)
+
         # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
@@ -196,6 +200,7 @@ def adddoctor():
     # Kiểm tra quyền admin từ token
     try:
         identity = get_jwt_identity()
+        identity = json.loads(identity)
         
         # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
         if not identity or not isinstance(identity, dict) or "role" not in identity:
@@ -253,6 +258,7 @@ def get_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
 
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
@@ -286,7 +292,7 @@ def get_all_users():
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-
+        identity = json.loads(identity)
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
@@ -316,6 +322,7 @@ def get_doctor(doctor_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
 
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
@@ -351,6 +358,7 @@ def get_all_doctors():
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
 
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
@@ -382,6 +390,7 @@ def delete_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
         if not identity or "role" not in identity or identity["role"] != admin:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
@@ -405,6 +414,7 @@ def delete_doctor(doctor_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
         if not identity or "role" not in identity or identity["role"] != admin:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
@@ -429,6 +439,7 @@ def edit_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
         if not identity or "role" not in identity or identity["role"] != admin:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
@@ -464,6 +475,7 @@ def edit_doctor(doctor_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
+        identity = json.loads(identity)
         if not identity or "role" not in identity or identity["role"] != admin:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
