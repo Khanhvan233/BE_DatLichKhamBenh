@@ -18,7 +18,35 @@ class BacSi(Base):
     ngay_bd_hanh_y = Column('Ngay_BD_Hanh_y', Date, nullable=False)
     password = Column('Password', String(50), nullable=False)
     username = Column('Username', CHAR(64), nullable=False)
+    # Quan hệ với bảng LienKetBenhVien
+    lienketbenhvien = relationship("LienKetBenhVien", back_populates="bacsi")
     
+class LienKetBenhVien(Base):
+    __tablename__ = "lienketbenhvien"
+    
+    id = Column('Id', Integer, primary_key=True, autoincrement=True)
+    bac_si_id = Column('BacSi_Id', Integer, ForeignKey('bacsi.Id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+    ten_benh_vien = Column('Ten_BenhVien', String(100), nullable=False)
+    dia_chi = Column('Dia_chi', String(128), nullable=False)
+    ngay_db = Column('Ngay_DB', Date, nullable=False)
+    ngay_kt = Column('Ngay_KT', Date, nullable=True)
+    
+    # Relationship to BacSi table
+    bacsi = relationship("BacSi", back_populates="lienketbenhvien")
+
+    
+
+class ClientAccount(Base):
+    __tablename__ = "client_account"
+    
+    id = Column('Id', Integer, primary_key=True, autoincrement=True)
+    username = Column('Username', CHAR(64), nullable=False)
+    password = Column('Password', String(50), nullable=False)
+    ho = Column('Ho', String(50), nullable=False)
+    ten = Column('Ten', String(50), nullable=False)
+    sdt = Column('SDT', DECIMAL(10, 0), nullable=False)
+    email = Column('Email', String(255), nullable=True)
+
 # class BangCapChungChi(Base):
 #     __tablename__ = "bangcap_chungchi"
     
@@ -31,16 +59,6 @@ class BacSi(Base):
 #     # Relationship to BacSi table
 #     bacsi = relationship("BacSi", back_populates="bangcap_chungchi")
 
-class ClientAccount(Base):
-    __tablename__ = "client_account"
-    
-    id = Column('Id', Integer, primary_key=True, autoincrement=True)
-    username = Column('Username', CHAR(64), nullable=False)
-    password = Column('Password', String(50), nullable=False)
-    ho = Column('Ho', String(50), nullable=False)
-    ten = Column('Ten', String(50), nullable=False)
-    sdt = Column('SDT', DECIMAL(10, 0), nullable=False)
-    email = Column('Email', String(255), nullable=True)
 
 # class CTKhoa(Base):
 #     __tablename__ = "ct_khoa"
@@ -98,19 +116,6 @@ class ClientAccount(Base):
     
 #     # Relationship to VanPhong table
 #     vanphong = relationship("VanPhong", back_populates="lichtrinh")
-
-# class LienKetBenhVien(Base):
-#     __tablename__ = "lienketbenhvien"
-    
-#     id = Column('Id', Integer, primary_key=True, autoincrement=True)
-#     bac_si_id = Column('BacSi_Id', Integer, ForeignKey('bacsi.Id', ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
-#     ten_benh_vien = Column('Ten_BenhVien', String(100), nullable=False)
-#     dia_chi = Column('Dia_chi', String(128), nullable=False)
-#     ngay_db = Column('Ngay_DB', Date, nullable=False)
-#     ngay_kt = Column('Ngay_KT', Date, nullable=True)
-    
-#     # Relationship to BacSi table
-#     bac_si = relationship("BacSi", back_populates="lienketbenhvien")
 
 # class Review(Base):
 #     __tablename__ = "review"
