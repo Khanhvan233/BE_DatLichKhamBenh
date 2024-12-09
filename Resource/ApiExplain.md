@@ -46,3 +46,7 @@
 - **Mục đích:** Tìm kiếm trung tâm theo tên.  
 - truyển JSON vào URL 
 
+# SignUp Controller  
+## /register
+- **Mục đích:** Đăng ký tài khoản cho user mới
+
