@@ -10,7 +10,7 @@ while not os.path.exists(os.path.join(rootDirectory, 'Service')):
 class FirebaseHandler:
     def __init__(self):
         self.databaseURL = "banrem-efaac.appspot.com"
-        self.cred = credentials.Certificate(rootDirectory + "/Resourd/serviceAccountKey.json")
+        self.cred = credentials.Certificate(rootDirectory + "/Resource/serviceAccountKey.json")
         self.app = firebase_admin.initialize_app(self.cred, {'storageBucket': self.databaseURL})
         self.bucket = storage.bucket(app=self.app)
 
