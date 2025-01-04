@@ -5,6 +5,7 @@ from flask import jsonify
 from flask import abort, redirect
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jwt_identity, get_jwt
@@ -61,7 +62,10 @@ def get_doctor(doctor_id):
 @doctor_blueprint.route('/getAllDoctors', methods=['GET'])
 def get_all_doctors():
     try:
-        
+ # Đóng session hiện tại
+        db_manager.close_session()
+
+        #session_db = db_manager.get_session()
         # Lấy danh sách tất cả bác sĩ
         doctors = session_db.query(BacSi).all()
         doctor_list = [{
@@ -74,13 +78,14 @@ def get_all_doctors():
             "ngay_bd_hanh_y": str(doctor.ngay_bd_hanh_y),
             "username": doctor.username
         } for doctor in doctors]
-
+        print(doctor_list)
         return jsonify(doctor_list), 200
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
     
 @doctor_blueprint.route('/searchDoctor', methods=['GET'])
+#nên thêm họ
 def search_doctor():
     try:
         # Lấy từ khóa tìm kiếm từ JSON body request

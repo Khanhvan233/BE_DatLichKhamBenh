@@ -4,6 +4,7 @@ from flask import jsonify
 from flask import abort, redirect
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jwt_identity, get_jwt

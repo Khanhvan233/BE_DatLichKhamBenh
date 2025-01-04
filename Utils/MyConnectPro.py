@@ -29,4 +29,8 @@ class MyConnectPro:
             return result.fetchall()
         finally:
             session.close()
-    
+    def close_session(self):
+            """Đóng và hủy session factory."""
+            if self.Session:
+                self.Session.close_all()  # Đảm bảo tất cả các session liên quan đều được đóng
+                

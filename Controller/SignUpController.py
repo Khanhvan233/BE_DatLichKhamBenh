@@ -42,7 +42,7 @@ def register():
     ten = data.get('ten')    # Tên
     email = data.get('email')
     sdt = data.get('sdt')   # Số điện thoại
-
+    cccd = data.get('cccd')
     # Validate input fields
     if not username or not password or not ho or not ten or not sdt:
         return jsonify({"msg": "Cần nhập đầy đủ username, password, họ, tên và số điện thoại"}), 400
@@ -61,7 +61,8 @@ def register():
             ho=ho,
             ten=ten,
             email=email,
-            sdt=sdt
+            sdt=sdt,
+            cccd=cccd
         )
         session_db.add(new_user)
         session_db.commit()

@@ -35,6 +35,7 @@ login_blueprint = Blueprint('login', __name__)
 
 @login_blueprint.route('/login', methods=['POST','GET'])
 def login():
+    db_manager.close_session()
     # Lấy username và password từ request
     username = request.json.get('username')
     password = request.json.get('password')
@@ -70,8 +71,7 @@ def login():
                 "userID": client.id,
                 "username": client.ten
             }
-        idenInfoStr = json.dumps(idenInfo, ensure_ascii=False)
-        accessToken = create_access_token(identity=idenInfoStr, fresh=True)
+        accessToken = create_access_token(identity=idenInfo, fresh=True)
         print(f"Generated identity: {idenInfo}")
         print(f"Generated token: {accessToken}")
         # Trả về các token trong response
