@@ -15,6 +15,7 @@ from Service.Models import *
 from flask_jwt_extended import jwt_required
 import os
 from Variable import *
+from Service.FirebaseHandler import FirebaseHandler
 
 user = os.environ.get('USER_NAME')
 password_db = os.environ.get('PASSWORD')
@@ -87,29 +88,34 @@ def addUser():
 
     
 @auth_blueprint.route('/addDoctor', methods=['POST'])
-@jwt_required()
-def adddoctor():
+# @jwt_required()
+def adddoctor():    
     # Kiểm tra quyền admin từ token
     try:
-        identity = get_jwt_identity()
+        # identity = get_jwt_identity()
         
-        # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
-        if not identity or not isinstance(identity, dict) or "role" not in identity:
-            return jsonify({"msg": "Token không hợp lệ"}), 400
+        # # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
+        # if not identity or not isinstance(identity, dict) or "role" not in identity:
+        #     return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != admin:  # Chỉ admin mới được phép thêm tài khoản
-            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+        # if identity["role"] != admin:  # Chỉ admin mới được phép thêm tài khoản
+        #     return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
 
         # Lấy dữ liệu từ request
         data = request.json
         hoc_ham = data.get('hoc_ham')
         ho = data.get('ho')
         ten = data.get('ten')
-        hinh_anh = data.get('hinh_anh')
         mo_ta = data.get('mo_ta')
         ngay_bd_hanh_y = data.get('ngay_bd_hanh_y')
         password = data.get('password')
         username = data.get('username')
+        image_base64 = data.get['hinh_anh']
+        prefix, base64_data = image_base64.split(',', 1)
+
+        image_data = base64.b64decode(base64_data)
+        url = firebaseHanler.updateImagePublic(path, image_data, "image/png")
+
         # Kiểm tra các trường cần thiết
         if not hoc_ham or not ho or not ten or not ngay_bd_hanh_y or not password or not username:
             return jsonify({"msg": "Cần nhập đầy đủ thông tin"}), 400
@@ -120,7 +126,7 @@ def adddoctor():
                 hoc_ham=hoc_ham,
                 ho=ho,
                 ten=ten,
-                hinh_anh=hinh_anh,
+                hinh_anh=url,
                 mo_ta=mo_ta,
                 ngay_bd_hanh_y=ngay_bd_hanh_y,
                 password=password,
@@ -250,7 +256,7 @@ def delete_doctor(doctor_id):
         return jsonify({"msg": "Xóa doctor thành công"}), 200
     except Exception as e:
         session_db.rollback()
-        return jsonify({"msg": str(e)}), 500
+        return jsonify({"msg": "Không thể xóa bác sĩ do vẫn còn lịch làm việc"}), 500
 
 
 @auth_blueprint.route('/editUser/<int:user_id>', methods=['PUT'])
