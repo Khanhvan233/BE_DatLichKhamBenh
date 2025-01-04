@@ -15,7 +15,6 @@ from Service.Models import *
 from flask_jwt_extended import jwt_required
 import os
 from Variable import *
-from Service.FirebaseHandler import FirebaseHandler
 
 user = os.environ.get('USER_NAME')
 password_db = os.environ.get('PASSWORD')
@@ -106,16 +105,11 @@ def adddoctor():
         hoc_ham = data.get('hoc_ham')
         ho = data.get('ho')
         ten = data.get('ten')
+        hinh_anh = data.get('hinh_anh')
         mo_ta = data.get('mo_ta')
         ngay_bd_hanh_y = data.get('ngay_bd_hanh_y')
         password = data.get('password')
         username = data.get('username')
-        image_base64 = data.get['hinh_anh']
-        prefix, base64_data = image_base64.split(',', 1)
-
-        image_data = base64.b64decode(base64_data)
-        url = firebaseHanler.updateImagePublic(path, image_data, "image/png")
-
         # Kiểm tra các trường cần thiết
         if not hoc_ham or not ho or not ten or not ngay_bd_hanh_y or not password or not username:
             return jsonify({"msg": "Cần nhập đầy đủ thông tin"}), 400
@@ -126,7 +120,7 @@ def adddoctor():
                 hoc_ham=hoc_ham,
                 ho=ho,
                 ten=ten,
-                hinh_anh=url,
+                hinh_anh=hinh_anh,
                 mo_ta=mo_ta,
                 ngay_bd_hanh_y=ngay_bd_hanh_y,
                 password=password,
