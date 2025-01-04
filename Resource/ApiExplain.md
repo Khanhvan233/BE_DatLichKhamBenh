@@ -10,6 +10,8 @@
 - **Mục đích:** Admin có thể thêm người dùng mới vào hệ thống.  
 ## /addDoctor  
 - **Mục đích:** Admin thêm bác sĩ mới vào hệ thống.  
+- **Cách dùng** Mã hóa hình ảnh thành kiểu base64 rồi truyền xuống JSON nha .  
+
 
 ## /getUser/id(variable)  
 - **Mục đích:** Lấy thông tin của người dùng theo ID.  
