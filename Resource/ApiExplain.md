@@ -10,6 +10,8 @@
 - **Mục đích:** Admin có thể thêm người dùng mới vào hệ thống.  
 ## /addDoctor  
 - **Mục đích:** Admin thêm bác sĩ mới vào hệ thống.  
+- **Cách dùng** Mã hóa hình ảnh thành kiểu base64 rồi truyền xuống JSON nha .  
+
 
 ## /getUser/id(variable)  
 - **Mục đích:** Lấy thông tin của người dùng theo ID.  
@@ -28,6 +30,10 @@
 ## /editDoctor/id(variable)  
 - **Mục đích:** Cập nhật thông tin bác sĩ.  
 - `id` truyền vào URL.  
+## /getAllAppointments
+- **Mục đích:** Xem danh sách các cuộc hẹn đã được đặt sắp tư mới đến cũ
+## /updateAppointmentStatus/id
+- **Mục đích:** Xác nhận đặt lịch chuyển trạng thái từ 0 sang 1
 ---
 # Doctor Controller  
 ## /getDoctor/id  
@@ -38,6 +44,8 @@
 ## /searchDoctor/name(json)  
 - **Mục đích:** Tìm kiếm bác sĩ theo tên.  
 - truyển JSON vào URL 
+## /getDoctorsByKhoa
+- **Mục đích:** Tìm kiếm bác sĩ theo khoa
 ---
 # Center Controller  
 ## /getAllCenter  
@@ -49,4 +57,13 @@
 # SignUp Controller  
 ## /register
 - **Mục đích:** Đăng ký tài khoản cho user mới
-
+# Client Account Controller 
+##  /myINFO/id
+- **Mục đích:** xem thông tin cá nhân ID này lấy từ khi người dùng đăng nhập vào hệ thống 
+## /editMyInfo/id
+- **Mục đích:** sửa thông tin cá nhân ID này lấy từ khi người dùng đăng nhập vào hệ thống 
+# Booking Controller  
+## /booking
+- **Mục đích:** đặt lịch khám bệnh 
+## /appointments/id
+- **Mục đích:** xem danh sách lịch khám bệnh của mình đã đặt ID này lấy từ khi người dùng đăng nhập vào hệ thống 

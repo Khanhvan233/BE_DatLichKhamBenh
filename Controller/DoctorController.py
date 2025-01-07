@@ -83,7 +83,49 @@ def get_all_doctors():
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
-    
+@doctor_blueprint.route('/getDoctorsByKhoa', methods=['GET'])
+def get_doctors_by_khoa():
+    try:
+        # Nhận tên khoa từ body JSON
+        data = request.get_json()
+        ten_khoa = data.get('ten_khoa')
+
+        if not ten_khoa:
+            return jsonify({"error": "Tên khoa không được để trống"}), 400
+
+        # Tìm kiếm khoa
+        khoa = session_db.query(Khoa).filter(Khoa.ten_khoa == ten_khoa).first()
+        if not khoa:
+            return jsonify({"error": "Khoa not found"}), 404
+
+        # Tìm các bác sĩ liên kết với khoa
+        ct_khoa_records = session_db.query(CTKhoa).filter(CTKhoa.khoa_id == khoa.id).all()
+        if not ct_khoa_records:
+            return jsonify({"error": "No doctors found in the specified khoa"}), 404
+
+        # Lấy danh sách bác sĩ
+        doctor_list = []
+        for record in ct_khoa_records:
+            doctor = session_db.query(BacSi).filter(BacSi.id == record.bacsi_id).first()
+            if doctor:
+                doctor_list.append({
+                    "id": doctor.id,
+                    "hoc_ham": doctor.hoc_ham,
+                    "ho": doctor.ho,
+                    "ten": doctor.ten,
+                    "hinh_anh": doctor.hinh_anh,
+                    "mo_ta": doctor.mo_ta,
+                    "ngay_bd_hanh_y": str(doctor.ngay_bd_hanh_y),
+                    "username": doctor.username
+                })
+
+        return jsonify(doctor_list), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 @doctor_blueprint.route('/searchDoctor', methods=['GET'])
 #nên thêm họ
 def search_doctor():

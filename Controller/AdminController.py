@@ -14,7 +14,9 @@ from flask_jwt_extended import get_jwt_identity
 from Service.Models import *
 from flask_jwt_extended import jwt_required
 import os
+import base64
 from Variable import *
+from Service.FirebaseHandler import FirebaseHandler
 
 user = os.environ.get('USER_NAME')
 password_db = os.environ.get('PASSWORD')
@@ -88,7 +90,7 @@ def addUser():
     
 @auth_blueprint.route('/addDoctor', methods=['POST'])
 @jwt_required()
-def adddoctor():
+def adddoctor():    
     # Kiểm tra quyền admin từ token
     try:
         identity = get_jwt_identity()
@@ -105,11 +107,18 @@ def adddoctor():
         hoc_ham = data.get('hoc_ham')
         ho = data.get('ho')
         ten = data.get('ten')
-        hinh_anh = data.get('hinh_anh')
         mo_ta = data.get('mo_ta')
         ngay_bd_hanh_y = data.get('ngay_bd_hanh_y')
         password = data.get('password')
         username = data.get('username')
+        image_base64 = data.get('hinh_anh')
+        prefix, base64_data = image_base64.split(',', 1)
+        
+        image_data = base64.b64decode(base64_data)
+        path = f"doctors/{username}_profile.png"
+        # Cập nhật hình ảnh lên Firebase Storage
+        url = FirebaseHandler().updateImagePublic(path, image_data, "image/png")
+
         # Kiểm tra các trường cần thiết
         if not hoc_ham or not ho or not ten or not ngay_bd_hanh_y or not password or not username:
             return jsonify({"msg": "Cần nhập đầy đủ thông tin"}), 400
@@ -120,7 +129,7 @@ def adddoctor():
                 hoc_ham=hoc_ham,
                 ho=ho,
                 ten=ten,
-                hinh_anh=hinh_anh,
+                hinh_anh=url,
                 mo_ta=mo_ta,
                 ngay_bd_hanh_y=ngay_bd_hanh_y,
                 password=password,
@@ -250,7 +259,7 @@ def delete_doctor(doctor_id):
         return jsonify({"msg": "Xóa doctor thành công"}), 200
     except Exception as e:
         session_db.rollback()
-        return jsonify({"msg": str(e)}), 500
+        return jsonify({"msg": "Không thể xóa bác sĩ do vẫn còn lịch làm việc"}), 500
 
 
 @auth_blueprint.route('/editUser/<int:user_id>', methods=['PUT'])
@@ -323,3 +332,74 @@ def edit_doctor(doctor_id):
     except Exception as e:
         session_db.rollback()
         return jsonify({"msg": str(e)}), 500
+    
+@auth_blueprint.route('/getAllAppointments', methods=['GET'])
+@jwt_required()
+def get_all_appointments():
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        # Chỉ admin mới có quyền xem tất cả các lịch hẹn
+        if identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền truy cập danh sách lịch hẹn này"}), 403
+
+        # Lấy tất cả các lịch hẹn từ cơ sở dữ liệu và sắp xếp theo ngày giờ đặt gần nhất
+        appointments = session_db.query(DatHen).order_by(DatHen.ngay_gio_dat.desc()).all()
+
+        if not appointments:
+            return jsonify({"msg": "Không có lịch hẹn nào"}), 404
+
+        # Chuẩn bị dữ liệu trả về
+        appointments_list = []
+        for appointment in appointments:
+            appointments_list.append({
+                "id": appointment.id,
+                "user_account_id": appointment.user_account_id,
+                "gio_hen": appointment.gio_hen.strftime("%Y-%m-%d %H:%M:%S") if appointment.gio_hen else None,
+                "trang_thai": appointment.trang_thai,
+                "ngay_gio_dat": appointment.ngay_gio_dat.strftime("%Y-%m-%d %H:%M:%S") if appointment.ngay_gio_dat else None,
+                "kieu_dat": appointment.kieu_dat,
+                "vanphong_id": appointment.vanphong_id
+            })
+
+        return jsonify({"appointments": appointments_list}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+    
+@auth_blueprint.route('/updateAppointmentStatus/<int:appointment_id>', methods=['PUT'])
+@jwt_required()
+def update_appointment_status(appointment_id):
+    try:
+        # Lấy user ID từ token JWT
+        user_identity = get_jwt_identity()
+
+        # Kiểm tra xem user có phải là admin hay không
+        if user_identity["role"] != admin:
+            return jsonify({"msg": "Bạn không có quyền thay đổi trạng thái lịch hẹn"}), 403
+
+        # Lấy lịch hẹn từ cơ sở dữ liệu theo appointment_id
+        appointment = session_db.query(DatHen).filter_by(id=appointment_id).first()
+
+        if not appointment:
+            return jsonify({"msg": "Lịch hẹn không tồn tại"}), 404
+
+        # Kiểm tra trạng thái hiện tại
+        if appointment.trang_thai == 0:
+            # Chỉ chuyển từ 0 (chưa xác nhận) thành 1 (đã xác nhận)
+            appointment.trang_thai = 1
+            session_db.commit()
+            return jsonify({"msg": "Cập nhật trạng thái lịch hẹn thành công"}), 200
+        else:
+            return jsonify({"msg": "Trạng thái này không thể thay đổi"}), 400
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+
+

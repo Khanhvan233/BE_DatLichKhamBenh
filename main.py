@@ -10,6 +10,8 @@ from Controller.AdminController import auth_blueprint
 from Controller.CenterController import center_blueprint
 from Controller.DoctorController import doctor_blueprint
 from Controller.SignUpController import signup_blueprint
+from Controller.BookingController import book_blueprint
+from Controller.ClientAccountController import acc_blueprint
 
 app = Flask(__name__)
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -20,6 +22,8 @@ app.register_blueprint(doctor_blueprint)
 app.register_blueprint(center_blueprint)
 app.register_blueprint(login_blueprint)
 app.register_blueprint(signup_blueprint)
+app.register_blueprint(book_blueprint)
+app.register_blueprint(acc_blueprint)
 
 secret_key = os.environ.get('SECRET_KEY')
 
