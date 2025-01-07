@@ -71,10 +71,12 @@ def login():
                 "username": client.ten
             }
         accessToken = create_access_token(identity=idenInfo, fresh=True)
+        userID = client.id
         # Trả về các token trong response
         response = jsonify({
             "msg": "Đăng nhập thành công",
-            "token": accessToken
+            "token": accessToken,
+            "userIDuserID": userID
         })
         return response, 200
 
