@@ -22,7 +22,7 @@ database = os.environ.get('DATABASE')
 host = os.environ.get('HOST')
 port = os.environ.get('PORT')
 secret_key=os.environ.get('SECRET_KEY')
-admin=os.environ.get('ADMIN')
+adminNum=5
 
 
 db_manager = MyConnectPro(user= user,password=password_db,database= database,host= host,port=port)
@@ -57,7 +57,7 @@ def login():
             response = jsonify({"msg": "Tên đăng nhập hoặc mật khẩu không đúng"})
             return response, 404
         
-        if client.password == password and client.id == int(admin):
+        if client.password == password and client.id == adminNum:
             idenInfo = {
                 "role": admin,  # Gán role là admin nếu là tài khoản admin
                 "userID": client.id, 
@@ -66,7 +66,7 @@ def login():
         else:
             # Nếu không phải admin
             idenInfo = {
-                "role": user,  # Gán role là user cho các tài khoản khác
+                "role": user,  # Gán role là client cho các tài khoản khác
                 "userID": client.id,
                 "username": client.ten
             }

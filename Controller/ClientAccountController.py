@@ -24,7 +24,7 @@ database = os.environ.get('DATABASE')
 host = os.environ.get('HOST')
 port = os.environ.get('PORT')
 secret_key=os.environ.get('SECRET_KEY')
-admin=os.environ.get('ADMIN')
+adminNum=5
 
 
 db_manager = MyConnectPro(user= user,password=password_db,database= database,host= host,port=port)
@@ -44,9 +44,6 @@ def get_user(user_id):
 
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
-
-        if identity["role"] != client:  # Chỉ admin mới có quyền xem thông tin người dùng
-            return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
         # Tìm người dùng theo ID
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
@@ -68,14 +65,13 @@ def get_user(user_id):
         return jsonify({"msg": str(e)}), 500
     
 
-
 @acc_blueprint.route('/editMyInfo/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def edit_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-        if not identity or "role" not in identity or identity["role"] != client:
+        if not identity or "role" not in identity:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
         # Kiểm tra xem user có tồn tại không
@@ -85,7 +81,16 @@ def edit_user(user_id):
 
         # Lấy dữ liệu từ request
         data = request.json
-        user.username = data.get('username', user.username)
+        new_username = data.get('username', user.username)
+
+        # Kiểm tra trùng username nếu có thay đổi
+        if new_username != user.username:
+            existing_user = session_db.query(ClientAccount).filter_by(username=new_username).one_or_none()
+            if existing_user:
+                return jsonify({"msg": "Tên đăng nhập đã tồn tại"}), 400
+
+        # Cập nhật thông tin user
+        user.username = new_username
         user.password = data.get('password', user.password)
         user.ho = data.get('ho', user.ho)
         user.ten = data.get('ten', user.ten)
@@ -98,8 +103,7 @@ def edit_user(user_id):
 
     except IntegrityError:
         session_db.rollback()
-        return jsonify({"msg": "Tên đăng nhập đã tồn tại"}), 400
+        return jsonify({"msg": "Đã xảy ra lỗi khi cập nhật thông tin"}), 400
     except Exception as e:
         session_db.rollback()
         return jsonify({"msg": str(e)}), 500
-

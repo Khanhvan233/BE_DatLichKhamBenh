@@ -2,8 +2,8 @@
 
 
 admin= "admin"
-doctor = 'doctor'
-client = 'client'
+doctor = "doctor"
+user = "user"
 
 # account của admin là: van 
 # pass: 1
