@@ -45,6 +45,7 @@ def get_user(user_id):
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
+        session_db = db_manager.get_session()
         # Tìm người dùng theo ID
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
 
@@ -74,6 +75,7 @@ def edit_user(user_id):
         if not identity or "role" not in identity:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
+        session_db = db_manager.get_session()
         # Kiểm tra xem user có tồn tại không
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
         if not user:

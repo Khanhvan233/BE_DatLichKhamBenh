@@ -29,7 +29,6 @@ admin=os.environ.get('ADMIN')
 
 db_manager = MyConnectPro(user= user,password=password_db,database= database,host= host,port=port)
 db_manager.connect()
-session_db = db_manager.get_session()
 
 
 book_blueprint = Blueprint('book', __name__)
@@ -54,6 +53,7 @@ def dat_lich_kham():
         vanphong_id = data['vanphong_id']
         gio_hen = datetime.strptime(data['gio_hen'], "%Y-%m-%d %H:%M:%S")
 
+        session_db = db_manager.get_session()
         # Kiểm tra sự tồn tại của user_account và vanphong
         user_account = session_db.query(ClientAccount).filter_by(id=user_account_id).first()
         vanphong = session_db.query(VanPhong).filter_by(id=vanphong_id).first()
@@ -84,6 +84,7 @@ def dat_lich_kham():
 @book_blueprint.route('/appointments/<int:user_account_id>', methods=['GET'])
 def get_user_appointments(user_account_id):
     try:
+        session_db = db_manager.get_session()
         # Kiểm tra sự tồn tại của user_account
         user_account = session_db.query(ClientAccount).filter_by(id=user_account_id).first()
         if not user_account:

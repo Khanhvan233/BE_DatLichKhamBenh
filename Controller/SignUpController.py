@@ -48,6 +48,7 @@ def register():
         return jsonify({"msg": "Cần nhập đầy đủ username, password, họ, tên và số điện thoại"}), 400
 
     try:
+        session_db = db_manager.get_session()
         # Kiểm tra username đã tồn tại trong database
         existing_user = session_db.query(ClientAccount).filter_by(username=username).one_or_none()
 
