@@ -37,6 +37,7 @@ doctor_blueprint = Blueprint('doctor', __name__)
 @doctor_blueprint.route('/getDoctor/<int:doctor_id>', methods=['GET'])
 def get_doctor(doctor_id):
     try:
+        session_db = db_manager.get_session()
         # Tìm bác sĩ theo ID
         doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
 
@@ -62,10 +63,8 @@ def get_doctor(doctor_id):
 @doctor_blueprint.route('/getAllDoctors', methods=['GET'])
 def get_all_doctors():
     try:
- # Đóng session hiện tại
-        db_manager.close_session()
-
-        #session_db = db_manager.get_session()
+        
+        session_db = db_manager.get_session()
         # Lấy danh sách tất cả bác sĩ
         doctors = session_db.query(BacSi).all()
         doctor_list = [{
@@ -83,6 +82,7 @@ def get_all_doctors():
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+    
 @doctor_blueprint.route('/getDoctorsByKhoa', methods=['GET'])
 def get_doctors_by_khoa():
     try:
@@ -92,7 +92,8 @@ def get_doctors_by_khoa():
 
         if not ten_khoa:
             return jsonify({"error": "Tên khoa không được để trống"}), 400
-
+        
+        session_db = db_manager.get_session()
         # Tìm kiếm khoa
         khoa = session_db.query(Khoa).filter(Khoa.ten_khoa == ten_khoa).first()
         if not khoa:
@@ -137,6 +138,7 @@ def search_doctor():
         if not search_query:
             return jsonify({"msg": "Cần truyền từ khóa tìm kiếm"}), 400
 
+        session_db = db_manager.get_session()
         # Tìm bác sĩ theo tên chứa từ khóa (case-insensitive)
         doctors = session_db.query(BacSi).filter(
             BacSi.ten.ilike(f"%{search_query}%")
