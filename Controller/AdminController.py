@@ -45,7 +45,7 @@ def addUser():
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != admin:  # Chỉ admin mới được phép thêm tài khoản
+        if identity["role"] != 'admin':  # Chỉ admin mới được phép thêm tài khoản
             return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
 
         # Lấy dữ liệu từ request
@@ -59,7 +59,7 @@ def addUser():
         # Kiểm tra các trường cần thiết
         if not username or not password or not ho or not ten or not sdt or not email:
             return jsonify({"msg": "Cần nhập đầy đủ thông tin"}), 400
-
+        session_db = db_manager.get_session()
         try:
             # Thêm tài khoản mới vào cơ sở dữ liệu
             new_user = ClientAccount(
@@ -99,7 +99,7 @@ def adddoctor():
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != admin:  # Chỉ admin mới được phép thêm tài khoản
+        if identity["role"] != 'admin':  # Chỉ admin mới được phép thêm tài khoản
             return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
 
         # Lấy dữ liệu từ request
@@ -122,7 +122,7 @@ def adddoctor():
         # Kiểm tra các trường cần thiết
         if not hoc_ham or not ho or not ten or not ngay_bd_hanh_y or not password or not username:
             return jsonify({"msg": "Cần nhập đầy đủ thông tin"}), 400
-
+        session_db = db_manager.get_session()
         try:
             # Thêm tài khoản mới vào cơ sở dữ liệu
             new_doctor = BacSi(
@@ -162,9 +162,10 @@ def get_user(user_id):
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != admin:  # Chỉ admin mới có quyền xem thông tin người dùng
+        if identity["role"] != 'admin':  # Chỉ admin mới có quyền xem thông tin người dùng
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
-
+        
+        session_db = db_manager.get_session()
         # Tìm người dùng theo ID
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
 
@@ -195,9 +196,10 @@ def get_all_users():
         if not identity or not isinstance(identity, dict) or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != admin:  # Chỉ admin mới có quyền xem danh sách người dùng
+        if identity["role"] != 'admin':  # Chỉ admin mới có quyền xem danh sách người dùng
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
-
+        
+        session_db = db_manager.get_session()
         # Lấy danh sách tất cả người dùng
         users = session_db.query(ClientAccount).all()
         user_list = [{
@@ -221,9 +223,10 @@ def delete_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-        if not identity or "role" not in identity or identity["role"] != admin:
+        if not identity or "role" not in identity or identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
-
+        
+        session_db = db_manager.get_session()
         # Kiểm tra xem user có tồn tại không
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
         if not user:
@@ -244,9 +247,10 @@ def delete_doctor(doctor_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-        if not identity or "role" not in identity or identity["role"] != admin:
+        if not identity or "role" not in identity or identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
+        session_db = db_manager.get_session()
         # Kiểm tra xem doctor có tồn tại không
         doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
         if not doctor:
@@ -268,9 +272,10 @@ def edit_user(user_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-        if not identity or "role" not in identity or identity["role"] != admin:
+        if not identity or "role" not in identity or identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
+        session_db = db_manager.get_session()
         # Kiểm tra xem user có tồn tại không
         user = session_db.query(ClientAccount).filter_by(id=user_id).one_or_none()
         if not user:
@@ -303,9 +308,10 @@ def edit_doctor(doctor_id):
     try:
         # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-        if not identity or "role" not in identity or identity["role"] != admin:
+        if not identity or "role" not in identity or identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
+        session_db = db_manager.get_session()
         # Kiểm tra xem doctor có tồn tại không
         doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
         if not doctor:
@@ -344,9 +350,10 @@ def get_all_appointments():
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
         # Chỉ admin mới có quyền xem tất cả các lịch hẹn
-        if identity["role"] != admin:
+        if identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền truy cập danh sách lịch hẹn này"}), 403
 
+        session_db = db_manager.get_session()
         # Lấy tất cả các lịch hẹn từ cơ sở dữ liệu và sắp xếp theo ngày giờ đặt gần nhất
         appointments = session_db.query(DatHen).order_by(DatHen.ngay_gio_dat.desc()).all()
 
@@ -380,9 +387,10 @@ def update_appointment_status(appointment_id):
         user_identity = get_jwt_identity()
 
         # Kiểm tra xem user có phải là admin hay không
-        if user_identity["role"] != admin:
+        if user_identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền thay đổi trạng thái lịch hẹn"}), 403
 
+        session_db = db_manager.get_session()
         # Lấy lịch hẹn từ cơ sở dữ liệu theo appointment_id
         appointment = session_db.query(DatHen).filter_by(id=appointment_id).first()
 

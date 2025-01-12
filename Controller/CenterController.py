@@ -43,6 +43,7 @@ def search_center():
         if not search_query:
             return jsonify({"msg": "Cần truyền từ khóa tìm kiếm"}), 400
 
+        session_db = db_manager.get_session()
         # Tìm bệnh viện theo tên chứa từ khóa (case-insensitive)
         centers = session_db.query(LienKetBenhVien).filter(
             LienKetBenhVien.ten_benh_vien.ilike(f"%{search_query}%")
@@ -73,6 +74,8 @@ def search_center():
 @center_blueprint.route('/getAllCenters', methods=['GET'])
 def get_all_centers():
     try:
+
+        session_db = db_manager.get_session()
         # Lấy danh sách tất cả trung tâm từ cơ sở dữ liệu
         centers = session_db.query(LienKetBenhVien).all()
 

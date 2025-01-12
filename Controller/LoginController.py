@@ -44,6 +44,7 @@ def login():
         return response, 404
 
     try:
+        session_db = db_manager.get_session()
         # Kiểm tra xem người dùng có tồn tại trong cơ sở dữ liệu không
         client = session_db.query(ClientAccount).filter_by(username=username).one_or_none()
 
@@ -101,6 +102,7 @@ def loginDoctor():
 
     
     try:
+        session_db = db_manager.get_session()
         # Kiểm tra xem người dùng có tồn tại trong cơ sở dữ liệu không
         client = session_db.query(BacSi).filter_by(username=username).one_or_none()
 
