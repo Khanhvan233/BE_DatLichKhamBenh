@@ -67,3 +67,10 @@
 - **Mục đích:** đặt lịch khám bệnh 
 ## /appointments/id
 - **Mục đích:** xem danh sách lịch khám bệnh của mình đã đặt ID này lấy từ khi người dùng đăng nhập vào hệ thống 
+### New: 
+## /getOffices
+- **Mục đích:** Lấy danh sách văn phòng để book lịch khám
+## /getCTKhoa
+- **Mục đích:** Lấy danh sách chi tiết khoa để hỗ trợ book lịch khám
+## /getKhoa
+- **Mục đích:** Lấy danh sách khoa để hỗ trợ book lịch khám
