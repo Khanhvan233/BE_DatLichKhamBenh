@@ -22,7 +22,7 @@ database = os.environ.get('DATABASE')
 host = os.environ.get('HOST')
 port = os.environ.get('PORT')
 secret_key=os.environ.get('SECRET_KEY')
-adminNum=5
+adminNum=1
 
 
 db_manager = MyConnectPro(user= user,password=password_db,database= database,host= host,port=port)

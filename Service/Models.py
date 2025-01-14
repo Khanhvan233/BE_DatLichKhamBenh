@@ -48,7 +48,7 @@ class ClientAccount(Base):
     ten = Column('Ten', String(50), nullable=False)
     sdt = Column('SDT', DECIMAL(10, 0), nullable=False)
     email = Column('Email', String(255), nullable=True)
-    cccd = Column('CCCD', String(255), nullable=True)
+    # cccd = Column('CCCD', String(255), nullable=True)
 
     dat_hen = relationship("DatHen", back_populates="user_account")
     reviews = relationship("Review", back_populates="user_account")

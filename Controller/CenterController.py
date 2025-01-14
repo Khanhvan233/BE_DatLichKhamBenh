@@ -75,7 +75,6 @@ def search_center():
 @center_blueprint.route('/getAllCenters', methods=['GET'])
 def get_all_centers():
     try:
-
         session_db = db_manager.get_session()
         # Lấy danh sách tất cả trung tâm từ cơ sở dữ liệu
         centers = session_db.query(LienKetBenhVien).all()
