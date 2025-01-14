@@ -4,7 +4,7 @@ from flask import request
 from flask import jsonify
 from flask import abort, redirect
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jwt_identity, get_jwt
@@ -18,6 +18,7 @@ import os
 import base64
 from Variable import *
 from Service.FirebaseHandler import FirebaseHandler
+from datetime import datetime  # Thêm import datetime
 
 user = os.environ.get('USER_NAME')
 password_db = os.environ.get('PASSWORD')
@@ -43,17 +44,17 @@ def dat_lich_kham():
         identity = get_jwt_identity()
         
         # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
-        if not identity or not isinstance(identity, dict) or "role" not in identity:
+        if not identity or not isinstance(identity, dict) or "role" not in identity: 
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != client:  # chỉ user mới đc book lịch khám
-            return jsonify({"msg": "Bạn không có quyền đặt lịch khám"}), 403
-        # Lấy dữ liệu từ yêu cầu JSON
+        # if identity["role"] != client:  # chỉ user mới đc book lịch khám
+        #     return jsonify({"msg": "Bạn không có quyền đặt lịch khám"}), 403
+        # # Lấy dữ liệu từ yêu cầu JSON
 
         data = request.json
         user_account_id = data['user_account_id']
         vanphong_id = data['vanphong_id']
-        gio_hen = datetime.strptime(data['gio_hen'], "%Y-%m-%d %H:%M:%S")
+        gio_hen = datetime.fromisoformat(data['gio_hen'])  # Chuyển đổi chuỗi thời gian sang đối tượng datetime
 
         # Kiểm tra sự tồn tại của user_account và vanphong
         user_account = session_db.query(ClientAccount).filter_by(id=user_account_id).first()
@@ -81,6 +82,7 @@ def dat_lich_kham():
     except Exception as e:
         session_db.rollback()
         return jsonify({"error": str(e)}), 500
+
     
 @book_blueprint.route('/appointments/<int:user_account_id>', methods=['GET'])
 def get_user_appointments(user_account_id):
@@ -114,3 +116,77 @@ def get_user_appointments(user_account_id):
     except Exception as e:
         session_db.rollback()
         return jsonify({"error": str(e)}), 500
+
+@book_blueprint.route('/getOffices', methods=['GET'])
+def getOffices():
+    try:      
+        
+        vanPhongs= session_db.query(VanPhong).all()
+
+        if not vanPhongs:
+            return jsonify({"message": "Hiện không có văn phòng!"}), 404
+        
+        vanPhong_list = []
+        for vanPhong in vanPhongs:
+            vanPhong_list.append({
+                "id": vanPhong.id,
+                "bac_si_id": vanPhong.bac_si_id,
+                "lienketbenhvien_id": vanPhong.lienketbenhvien_id,
+            })
+        
+        return jsonify({"offices": vanPhong_list}), 200
+    
+    except SQLAlchemyError as e:
+        return jsonify({"msg": "Lỗi cơ sở dữ liệu!", "error": str(e)}), 500
+
+    except Exception as e:
+        return jsonify({"msg": "Hệ thống lỗi!", "error": str(e)}), 500
+
+@book_blueprint.route('/getCTKhoa', methods=['GET'])
+def getCTKhoa():
+    try:      
+        
+        ctkhoas= session_db.query(CTKhoa).all()
+
+        if not ctkhoas:
+            return jsonify({"message": "Không có dữ liệu chi tiết khoa!"}), 404
+        
+        ctkhoa_list = []
+        for ctkhoa in ctkhoas:
+            ctkhoa_list.append({
+                "id": ctkhoa.id,
+                "bacsi_id": ctkhoa.bacsi_id,
+                "khoa_id": ctkhoa.khoa_id,
+            })
+        
+        return jsonify({"ctkhoas": ctkhoa_list}), 200
+    
+    except SQLAlchemyError as e:
+        return jsonify({"msg": "Lỗi cơ sở dữ liệu!", "error": str(e)}), 500
+
+    except Exception as e:
+        return jsonify({"msg": "Hệ thống lỗi!", "error": str(e)}), 500
+
+@book_blueprint.route('/getKhoa', methods=['GET'])
+def getKhoa():
+    try:      
+        
+        khoas= session_db.query(Khoa).all()
+
+        if not khoas:
+            return jsonify({"message": "Không có dữ liệu khoa!"}), 404
+        
+        khoa_list = []
+        for khoa in khoas:
+            khoa_list.append({
+                "id": khoa.id,
+                "ten_khoa": khoa.ten_khoa,
+            })
+        
+        return jsonify({"khoas": khoa_list}), 200
+    
+    except SQLAlchemyError as e:
+        return jsonify({"msg": "Lỗi cơ sở dữ liệu!", "error": str(e)}), 500
+
+    except Exception as e:
+        return jsonify({"msg": "Hệ thống lỗi!", "error": str(e)}), 500

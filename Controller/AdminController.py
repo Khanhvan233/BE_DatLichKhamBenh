@@ -339,41 +339,82 @@ def edit_doctor(doctor_id):
         session_db.rollback()
         return jsonify({"msg": str(e)}), 500
     
+# @auth_blueprint.route('/getAllAppointments', methods=['GET'])
+# @jwt_required()
+# def get_all_appointments():
+#     try:
+#         # Kiểm tra quyền admin từ token
+#         identity = get_jwt_identity()
+
+#         if not identity or "role" not in identity:
+#             return jsonify({"msg": "Token không hợp lệ"}), 400
+
+#         # Chỉ admin mới có quyền xem tất cả các lịch hẹn
+#         if identity["role"] != 'admin':
+#             return jsonify({"msg": "Bạn không có quyền truy cập danh sách lịch hẹn này"}), 403
+
+#         session_db = db_manager.get_session()
+#         # Lấy tất cả các lịch hẹn từ cơ sở dữ liệu và sắp xếp theo ngày giờ đặt gần nhất
+#         appointments = session_db.query(DatHen).order_by(DatHen.ngay_gio_dat.desc()).all()
+
+#         if not appointments:
+#             return jsonify({"msg": "Không có lịch hẹn nào"}), 404
+
+#         # Chuẩn bị dữ liệu trả về
+#         appointments_list = []
+#         for appointment in appointments:
+#             appointments_list.append({
+#                 "id": appointment.id,
+#                 "user_account_id": appointment.user_account_id,
+#                 "gio_hen": appointment.gio_hen.strftime("%Y-%m-%d %H:%M:%S") if appointment.gio_hen else None,
+#                 "trang_thai": appointment.trang_thai,
+#                 "ngay_gio_dat": appointment.ngay_gio_dat.strftime("%Y-%m-%d %H:%M:%S") if appointment.ngay_gio_dat else None,
+#                 "kieu_dat": appointment.kieu_dat,
+#                 "vanphong_id": appointment.vanphong_id
+#             })
+
+#         return jsonify({"appointments": appointments_list}), 200
+
 @auth_blueprint.route('/getAllAppointments', methods=['GET'])
 @jwt_required()
 def get_all_appointments():
     try:
-        # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
-
         if not identity or "role" not in identity:
             return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        # Chỉ admin mới có quyền xem tất cả các lịch hẹn
         if identity["role"] != 'admin':
             return jsonify({"msg": "Bạn không có quyền truy cập danh sách lịch hẹn này"}), 403
 
         session_db = db_manager.get_session()
-        # Lấy tất cả các lịch hẹn từ cơ sở dữ liệu và sắp xếp theo ngày giờ đặt gần nhất
-        appointments = session_db.query(DatHen).order_by(DatHen.ngay_gio_dat.desc()).all()
+        # Lấy tất cả lịch hẹn cùng với thông tin kiểu đặt
+        appointments = (
+            session_db.query(DatHen, KieuDat.ten_loai_dat)
+            .join(KieuDat, DatHen.kieu_dat == KieuDat.id)
+            .order_by(DatHen.ngay_gio_dat.desc())
+            .all()
+        )
 
         if not appointments:
             return jsonify({"msg": "Không có lịch hẹn nào"}), 404
 
-        # Chuẩn bị dữ liệu trả về
         appointments_list = []
-        for appointment in appointments:
+        for appointment, ten_loai_dat in appointments:
             appointments_list.append({
                 "id": appointment.id,
                 "user_account_id": appointment.user_account_id,
                 "gio_hen": appointment.gio_hen.strftime("%Y-%m-%d %H:%M:%S") if appointment.gio_hen else None,
                 "trang_thai": appointment.trang_thai,
                 "ngay_gio_dat": appointment.ngay_gio_dat.strftime("%Y-%m-%d %H:%M:%S") if appointment.ngay_gio_dat else None,
-                "kieu_dat": appointment.kieu_dat,
+                "kieu_dat": ten_loai_dat,  # Thêm tên kiểu đặt
                 "vanphong_id": appointment.vanphong_id
             })
 
         return jsonify({"appointments": appointments_list}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
@@ -399,12 +440,80 @@ def update_appointment_status(appointment_id):
 
         # Kiểm tra trạng thái hiện tại
         if appointment.trang_thai == 0:
-            # Chỉ chuyển từ 0 (chưa xác nhận) thành 1 (đã xác nhận)
+            # Chỉ chuyển từ 0 (đã đặt) thành 1 (thành công)
             appointment.trang_thai = 1
             session_db.commit()
             return jsonify({"msg": "Cập nhật trạng thái lịch hẹn thành công"}), 200
         else:
             return jsonify({"msg": "Trạng thái này không thể thay đổi"}), 400
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+@auth_blueprint.route('/getBookingTypes', methods=['GET'])
+@jwt_required()
+def get_booking_types():
+    try:
+        # Kiểm tra quyền admin từ token
+        identity = get_jwt_identity()
+
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        # Chỉ admin mới có quyền truy cập
+        if identity["role"] != 'admin':
+            return jsonify({"msg": "Bạn không có quyền truy cập thông tin này"}), 403
+
+        session_db = db_manager.get_session()
+        # Lấy tất cả kiểu đặt từ cơ sở dữ liệu
+        booking_types = session_db.query(KieuDat).all()
+
+        if not booking_types:
+            return jsonify({"msg": "Không có kiểu đặt nào"}), 404
+
+        # Chuẩn bị dữ liệu trả về
+        booking_types_list = []
+        for booking_type in booking_types:
+            booking_types_list.append({
+                "id": booking_type.id,
+                "ten_loai_dat": booking_type.ten_loai_dat
+            })
+
+        return jsonify({"booking_types": booking_types_list}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+@auth_blueprint.route('/getOfficeDetails/<int:office_id>', methods=['GET'])
+@jwt_required()
+def get_office_details(office_id):
+    try:
+        # Kiểm tra quyền truy cập từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Lấy thông tin văn phòng dựa trên office_id
+        office = session_db.query(VanPhong).filter_by(id=office_id).first()
+
+        if not office:
+            return jsonify({"msg": "Không tìm thấy văn phòng"}), 404
+
+        # Chuẩn bị dữ liệu trả về
+        office_details = {
+            "bac_si_id": office.bac_si_id,
+            "lienketbenhvien_id": office.lienketbenhvien_id,
+            "thoi_luong_kham": office.thoi_luong_kham,
+            "phi_gap_dau": office.phi_gap_dau,
+            "phi_gap_sau": office.phi_gap_sau,
+            "dia_chi": office.dia_chi,
+            "bac_si_ten": f"{office.bac_si.hoc_ham} {office.bac_si.ho} {office.bac_si.ten}" if office.bac_si else None,
+            "benh_vien": office.lienketbenhvien.ten_benh_vien if office.lienketbenhvien else None
+        }
+
+        return jsonify({"office": office_details}), 200
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
