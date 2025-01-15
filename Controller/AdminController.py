@@ -17,6 +17,7 @@ import os
 import base64
 from Variable import *
 from Service.FirebaseHandler import FirebaseHandler
+from sqlalchemy.orm import joinedload
 
 user = os.environ.get('USER_NAME')
 password_db = os.environ.get('PASSWORD')
@@ -518,5 +519,348 @@ def get_office_details(office_id):
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
 
+@auth_blueprint.route('/getAllDepartments', methods=['GET'])
+@jwt_required()
+def get_all_departments():
+    try:
+        # Kiểm tra quyền truy cập từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Lấy danh sách các khoa
+        departments = session_db.query(Khoa).all()
+
+        if not departments:
+            return jsonify({"msg": "Không có khoa nào được tìm thấy"}), 404
+
+        # Chuẩn bị dữ liệu trả về
+        department_list = []
+        for department in departments:
+            department_list.append({
+                "id": department.id,
+                "ten_khoa": department.ten_khoa
+            })
+
+        return jsonify({"departments": department_list}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
 
+@auth_blueprint.route('/addDepartment', methods=['POST'])
+@jwt_required()
+def add_department():
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        data = request.get_json()
+        ten_khoa = data.get("ten_khoa")
+
+        if not ten_khoa:
+            return jsonify({"msg": "Tên khoa không được để trống"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Kiểm tra trùng tên khoa
+        existing_department = session_db.query(Khoa).filter_by(ten_khoa=ten_khoa).first()
+        if existing_department:
+            return jsonify({"msg": "Tên khoa đã tồn tại"}), 400
+
+        # Thêm khoa mới
+        new_department = Khoa(ten_khoa=ten_khoa)
+        session_db.add(new_department)
+        session_db.commit()
+
+        return jsonify({"msg": "Thêm khoa mới thành công", "id": new_department.id}), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/editDepartment/<int:department_id>', methods=['PUT'])
+@jwt_required()
+def edit_department(department_id):
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        data = request.get_json()
+        ten_khoa = data.get("ten_khoa")
+
+        if not ten_khoa:
+            return jsonify({"msg": "Tên khoa không được để trống"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Kiểm tra khoa có tồn tại hay không
+        department = session_db.query(Khoa).filter_by(id=department_id).first()
+        if not department:
+            return jsonify({"msg": "Không tìm thấy khoa"}), 404
+
+        # Kiểm tra trùng tên khoa
+        existing_department = session_db.query(Khoa).filter(Khoa.ten_khoa == ten_khoa, Khoa.id != department_id).first()
+        if existing_department:
+            return jsonify({"msg": "Tên khoa đã tồn tại"}), 400
+
+        # Cập nhật tên khoa
+        department.ten_khoa = ten_khoa
+        session_db.commit()
+
+        return jsonify({"msg": "Cập nhật khoa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/deleteDepartment/<int:department_id>', methods=['DELETE'])
+@jwt_required()
+def delete_department(department_id):
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Kiểm tra khoa có tồn tại hay không
+        department = session_db.query(Khoa).filter_by(id=department_id).first()
+        if not department:
+            return jsonify({"msg": "Không tìm thấy khoa"}), 404
+
+        # Kiểm tra xem có bác sĩ nào liên kết với khoa không
+        linked_doctors = session_db.query(CTKhoa).filter_by(khoa_id=department_id).count()
+        if linked_doctors > 0:
+            return jsonify({"msg": "Không thể xóa khoa vì có bác sĩ liên kết"}), 400
+
+        # Xóa khoa
+        session_db.delete(department)
+        session_db.commit()
+
+        return jsonify({"msg": "Xóa khoa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/ct_khoa', methods=['GET'])
+@jwt_required()
+def get_ct_khoa():
+    try:
+        # Kiểm tra quyền truy cập từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        # Chỉ cho phép admin truy cập
+        if identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+
+        # Lấy tất cả các bản ghi từ bảng CTKhoa và sắp xếp theo bacsi_id
+        ct_khoa_records = session_db.query(CTKhoa).order_by(CTKhoa.bacsi_id).all()
+
+        # Chuẩn bị dữ liệu trả về
+        ct_khoa_list = []
+        for record in ct_khoa_records:
+            ct_khoa_list.append({
+                "id": record.id,
+                "bacsi_id": record.bacsi_id,
+                "bacsi_ho": record.bacsi.ho if record.bacsi else None,
+                "bacsi_ten": record.bacsi.ten if record.bacsi else None,
+                "khoa_id": record.khoa_id,
+                "khoa_ten": record.khoa.ten_khoa if record.khoa else None
+            })
+
+        return jsonify({"ct_khoa": ct_khoa_list}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+@auth_blueprint.route('/ct_khoa/add', methods=['POST'])
+@jwt_required()
+def add_ct_khoa():
+    """
+    Thêm mới một bản ghi vào bảng CTKhoa.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        bacsi_id = data.get('bacsi_id')
+        khoa_id = data.get('khoa_id')
+
+        if not bacsi_id:
+            return jsonify({"msg": "Thiếu thông tin bacsi_id"}), 400
+
+        session_db = db_manager.get_session()
+
+        new_ct_khoa = CTKhoa(bacsi_id=bacsi_id, khoa_id=khoa_id)
+        session_db.add(new_ct_khoa)
+        session_db.commit()
+
+        return jsonify({"msg": "Thêm CT Khoa thành công"}), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/ct_khoa/edit/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_ct_khoa(id):
+    """
+    Sửa một bản ghi trong bảng CTKhoa.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        khoa_id = data.get('khoa_id')
+
+        session_db = db_manager.get_session()
+        ct_khoa = session_db.query(CTKhoa).filter(CTKhoa.id == id).first()
+
+        if not ct_khoa:
+            return jsonify({"msg": "Không tìm thấy bản ghi"}), 404
+
+        # Cập nhật thông tin
+        if khoa_id is not None:
+            ct_khoa.khoa_id = khoa_id
+
+        session_db.commit()
+        return jsonify({"msg": "Cập nhật CT Khoa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/ct_khoa/delete/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_ct_khoa(id):
+    """
+    Xóa một bản ghi trong bảng CTKhoa.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+        ct_khoa = session_db.query(CTKhoa).filter(CTKhoa.id == id).first()
+
+        if not ct_khoa:
+            return jsonify({"msg": "Không tìm thấy bản ghi"}), 404
+
+        session_db.delete(ct_khoa)
+        session_db.commit()
+        return jsonify({"msg": "Xóa CT Khoa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+    
+@auth_blueprint.route('/bacsi', methods=['GET'])
+@jwt_required()
+def get_all_bacsi():
+    """
+    Lấy danh sách tất cả các bác sĩ.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+        bacsi_records = session_db.query(BacSi).all()
+
+        bacsi_list = [
+            {
+                "id": bacsi.id,
+                "ho": bacsi.ho,
+                "ten": bacsi.ten,
+            }
+            for bacsi in bacsi_records
+        ]
+
+        return jsonify({"bacsi_list": bacsi_list}), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/bacsi/<int:id>', methods=['GET'])
+@jwt_required()
+def get_doctor_by_id(id):
+    """
+    Lấy thông tin chi tiết của một bác sĩ theo ID.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity:
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+
+        # Lấy bác sĩ và các thông tin liên quan
+        doctor = session_db.query(BacSi).options(
+            joinedload(BacSi.lienketbenhvien),
+            joinedload(BacSi.bangcap_chungchi),
+            joinedload(BacSi.vanphongs).joinedload(VanPhong.lichtrinhs)
+        ).filter(BacSi.id == id).first()
+
+        if not doctor:
+            return jsonify({"msg": "Không tìm thấy bác sĩ với ID được cung cấp."}), 404
+
+        # Chuẩn bị dữ liệu phản hồi
+        response_data = {
+            "id": doctor.id,
+            "hoc_ham": doctor.hoc_ham,
+            "ho": doctor.ho,
+            "ten": doctor.ten,
+            "hinh_anh": doctor.hinh_anh,
+            "mo_ta": doctor.mo_ta,
+            "ngay_bd_hanh_y": doctor.ngay_bd_hanh_y.isoformat() if doctor.ngay_bd_hanh_y else None,
+            "username": doctor.username,
+            "lienketbenhvien": [
+                {
+                    "id": bv.id,
+                    "ten_benh_vien": bv.ten_benh_vien,
+                    "dia_chi": bv.dia_chi,
+                    "ngay_db": bv.ngay_db.isoformat(),
+                    "ngay_kt": bv.ngay_kt.isoformat() if bv.ngay_kt else None
+                } for bv in doctor.lienketbenhvien
+            ],
+            "bangcap_chungchi": [
+                {
+                    "id": bc.id,
+                    "ten_bangcap": bc.ten_bangcap,
+                    "co_quan_cap": bc.co_quan_cap,
+                    "ngay_cap": bc.ngay_cap.isoformat()
+                } for bc in doctor.bangcap_chungchi
+            ],
+            "vanphongs": [
+                {
+                    "id": vp.id,
+                    "dia_chi": vp.dia_chi,
+                    "thoi_luong_kham": vp.thoi_luong_kham,
+                    "phi_gap_dau": vp.phi_gap_dau,
+                    "phi_gap_sau": vp.phi_gap_sau,
+                    "lichtrinhs": [
+                        {
+                            "id": lt.id,
+                            "day_of_week": lt.day_of_week,
+                            "gio_bd": lt.gio_bd.isoformat(),
+                            "gio_kt": lt.gio_kt.isoformat(),
+                            "vang": lt.vang,
+                            "ly_do": lt.ly_do
+                        } for lt in vp.lichtrinhs
+                    ]
+                } for vp in doctor.vanphongs
+            ]
+        }
+
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
