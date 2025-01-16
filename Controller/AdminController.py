@@ -89,18 +89,18 @@ def addUser():
 
     
 @auth_blueprint.route('/addDoctor', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def adddoctor():    
     # Kiểm tra quyền admin từ token
     try:
-        identity = get_jwt_identity()
+        # identity = get_jwt_identity()
         
-        # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
-        if not identity or not isinstance(identity, dict) or "role" not in identity:
-            return jsonify({"msg": "Token không hợp lệ"}), 400
+        # # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
+        # if not identity or not isinstance(identity, dict) or "role" not in identity:
+        #     return jsonify({"msg": "Token không hợp lệ"}), 400
 
-        if identity["role"] != 'admin':  # Chỉ admin mới được phép thêm tài khoản
-            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+        # if identity["role"] != 'admin':  # Chỉ admin mới được phép thêm tài khoản
+        #     return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
 
         # Lấy dữ liệu từ request
         data = request.json

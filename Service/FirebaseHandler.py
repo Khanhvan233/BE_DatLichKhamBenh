@@ -1,7 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, storage
 import os
-from datetime import timedelta
 
 rootDirectory = os.path.dirname(os.path.abspath(__file__))
 while not os.path.exists(os.path.join(rootDirectory, 'Service')):
@@ -11,7 +10,15 @@ class FirebaseHandler:
     def __init__(self):
         self.databaseURL = "banrem-efaac.appspot.com"
         self.cred = credentials.Certificate(rootDirectory + "/Resource/serviceAccountKey.json")
-        self.app = firebase_admin.initialize_app(self.cred, {'storageBucket': self.databaseURL})
+
+        # Kiểm tra nếu ứng dụng Firebase đã được khởi tạo
+        if not firebase_admin._apps:
+            # Nếu chưa khởi tạo, khởi tạo Firebase App với tên ứng dụng tùy chọn
+            self.app = firebase_admin.initialize_app(self.cred, {'storageBucket': self.databaseURL})
+        else:
+            # Nếu đã khởi tạo, lấy ứng dụng hiện tại
+            self.app = firebase_admin.get_app()
+
         self.bucket = storage.bucket(app=self.app)
 
     def updateImagePublic(self, pathBlog, imageByte, contentType):
