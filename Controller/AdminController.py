@@ -864,3 +864,405 @@ def get_doctor_by_id(id):
 
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/vanphong', methods=['POST'])
+@jwt_required()
+def add_vanphong():
+    """
+    Thêm mới một văn phòng.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        bac_si_id = data.get('bac_si_id')
+        dia_chi = data.get('dia_chi')
+        thoi_luong_kham = data.get('thoi_luong_kham')
+        phi_gap_dau = data.get('phi_gap_dau')
+        phi_gap_sau = data.get('phi_gap_sau')
+
+        if not (bac_si_id and dia_chi and thoi_luong_kham and phi_gap_dau and phi_gap_sau):
+            return jsonify({"msg": "Thiếu thông tin cần thiết"}), 400
+
+        session_db = db_manager.get_session()
+        new_vanphong = VanPhong(
+            bac_si_id=bac_si_id,
+            dia_chi=dia_chi,
+            thoi_luong_kham=thoi_luong_kham,
+            phi_gap_dau=phi_gap_dau,
+            phi_gap_sau=phi_gap_sau,
+        )
+        session_db.add(new_vanphong)
+        session_db.commit()
+
+        return jsonify({"msg": "Thêm văn phòng thành công"}), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/vanphong/<int:id>', methods=['PUT'])
+@jwt_required()
+def edit_vanphong(id):
+    """
+    Sửa thông tin một văn phòng.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        session_db = db_manager.get_session()
+
+        vanphong = session_db.query(VanPhong).filter(VanPhong.id == id).first()
+        if not vanphong:
+            return jsonify({"msg": "Không tìm thấy văn phòng"}), 404
+
+        dia_chi = data.get('dia_chi')
+        thoi_luong_kham = data.get('thoi_luong_kham')
+        phi_gap_dau = data.get('phi_gap_dau')
+        phi_gap_sau = data.get('phi_gap_sau')
+
+        if dia_chi is not None:
+            vanphong.dia_chi = dia_chi
+        if thoi_luong_kham is not None:
+            vanphong.thoi_luong_kham = thoi_luong_kham
+        if phi_gap_dau is not None:
+            vanphong.phi_gap_dau = phi_gap_dau
+        if phi_gap_sau is not None:
+            vanphong.phi_gap_sau = phi_gap_sau
+
+        session_db.commit()
+        return jsonify({"msg": "Cập nhật văn phòng thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/vanphong/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_vanphong(id):
+    """
+    Xóa một văn phòng.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "admin":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+        vanphong = session_db.query(VanPhong).filter(VanPhong.id == id).first()
+        if not vanphong:
+            return jsonify({"msg": "Không tìm thấy văn phòng"}), 404
+
+        session_db.delete(vanphong)
+        session_db.commit()
+        return jsonify({"msg": "Xóa văn phòng thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lienketbenhvien', methods=['POST'])
+@jwt_required()
+def add_lienketbenhvien():
+    """
+    Thêm mới một liên kết bệnh viện.
+    """
+    try:
+        identity = get_jwt_identity()
+        # Kiểm tra quyền admin hoặc bác sĩ
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        bac_si_id = data.get('bac_si_id')
+        ten_benh_vien = data.get('ten_benh_vien')
+        dia_chi = data.get('dia_chi')
+        ngay_db = data.get('ngay_db')
+        ngay_kt = data.get('ngay_kt')
+
+        if not (bac_si_id and ten_benh_vien and dia_chi and ngay_db):
+            return jsonify({"msg": "Thiếu thông tin cần thiết"}), 400
+
+        session_db = db_manager.get_session()
+        new_lienketbenhvien = LienKetBenhVien(
+            bac_si_id=bac_si_id,
+            ten_benh_vien=ten_benh_vien,
+            dia_chi=dia_chi,
+            ngay_db=ngay_db,
+            ngay_kt=ngay_kt
+        )
+        session_db.add(new_lienketbenhvien)
+        session_db.commit()
+
+        return jsonify({
+            "id": new_lienketbenhvien.id,
+            "bac_si_id": new_lienketbenhvien.bac_si_id,
+            "ten_benh_vien": new_lienketbenhvien.ten_benh_vien,
+            "dia_chi": new_lienketbenhvien.dia_chi,
+            "ngay_db": new_lienketbenhvien.ngay_db.isoformat(),
+            "ngay_kt": new_lienketbenhvien.ngay_kt.isoformat() if new_lienketbenhvien.ngay_kt else None
+        }), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lienketbenhvien/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_lienketbenhvien(id):
+    """
+    Cập nhật thông tin một liên kết bệnh viện.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        session_db = db_manager.get_session()
+
+        lienketbenhvien = session_db.query(LienKetBenhVien).filter(LienKetBenhVien.id == id).first()
+        if not lienketbenhvien:
+            return jsonify({"msg": "Không tìm thấy liên kết bệnh viện"}), 404
+
+        ten_benh_vien = data.get('ten_benh_vien')
+        dia_chi = data.get('dia_chi')
+        ngay_db = data.get('ngay_db')
+        ngay_kt = data.get('ngay_kt')
+
+        if ten_benh_vien:
+            lienketbenhvien.ten_benh_vien = ten_benh_vien
+        if dia_chi:
+            lienketbenhvien.dia_chi = dia_chi
+        if ngay_db:
+            lienketbenhvien.ngay_db = ngay_db
+        if ngay_kt:
+            lienketbenhvien.ngay_kt = ngay_kt
+
+        session_db.commit()
+        return jsonify({"msg": "Cập nhật thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lienketbenhvien/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_lienketbenhvien(id):
+    """
+    Xóa một liên kết bệnh viện.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+        lienketbenhvien = session_db.query(LienKetBenhVien).filter(LienKetBenhVien.id == id).first()
+        if not lienketbenhvien:
+            return jsonify({"msg": "Không tìm thấy liên kết bệnh viện"}), 404
+
+        session_db.delete(lienketbenhvien)
+        session_db.commit()
+        return jsonify({"msg": "Xóa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/bangcapchungchi', methods=['POST'])
+@jwt_required()
+def add_bangcapchungchi():
+    """
+    Thêm mới một bằng cấp/chứng chỉ.
+    """
+    try:
+        identity = get_jwt_identity()
+        # Kiểm tra quyền admin hoặc bác sĩ
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        bacsi_id = data.get('bacsi_id')
+        ten_bangcap = data.get('ten_bangcap')
+        co_quan_cap = data.get('co_quan_cap')
+        ngay_cap = data.get('ngay_cap')
+
+        if not (bacsi_id and ten_bangcap and ngay_cap):
+            return jsonify({"msg": "Thiếu thông tin cần thiết"}), 400
+
+        session_db = db_manager.get_session()
+        new_bangcap = BangCapChungChi(
+            bacsi_id=bacsi_id,
+            ten_bangcap=ten_bangcap,
+            co_quan_cap=co_quan_cap,
+            ngay_cap=ngay_cap
+        )
+        session_db.add(new_bangcap)
+        session_db.commit()
+
+        return jsonify({
+            "id": new_bangcap.id,
+            "bacsi_id": new_bangcap.bacsi_id,
+            "ten_bangcap": new_bangcap.ten_bangcap,
+            "co_quan_cap": new_bangcap.co_quan_cap,
+            "ngay_cap": new_bangcap.ngay_cap.isoformat()
+        }), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/bangcapchungchi/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_bangcapchungchi(id):
+    """
+    Cập nhật thông tin một bằng cấp/chứng chỉ.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        session_db = db_manager.get_session()
+
+        bangcap = session_db.query(BangCapChungChi).filter(BangCapChungChi.id == id).first()
+        if not bangcap:
+            return jsonify({"msg": "Không tìm thấy bằng cấp/chứng chỉ"}), 404
+
+        if data.get('ten_bangcap'):
+            bangcap.ten_bangcap = data['ten_bangcap']
+        if data.get('co_quan_cap'):
+            bangcap.co_quan_cap = data['co_quan_cap']
+        if data.get('ngay_cap'):
+            bangcap.ngay_cap = data['ngay_cap']
+
+        session_db.commit()
+        return jsonify({"msg": "Cập nhật thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+@auth_blueprint.route('/bangcapchungchi/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_bangcapchungchi(id):
+    """
+    Xóa một bằng cấp/chứng chỉ.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+        bangcap = session_db.query(BangCapChungChi).filter(BangCapChungChi.id == id).first()
+        if not bangcap:
+            return jsonify({"msg": "Không tìm thấy bằng cấp/chứng chỉ"}), 404
+
+        session_db.delete(bangcap)
+        session_db.commit()
+        return jsonify({"msg": "Xóa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lichtrinh', methods=['POST'])
+@jwt_required()
+def add_lichtrinh():
+    """
+    Thêm mới một lịch trình.
+    """
+    try:
+        identity = get_jwt_identity()
+        # Kiểm tra quyền admin hoặc bác sĩ
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        van_phong_id = data.get('vanPhong_id')
+        day_of_week = data.get('day_of_week')
+        gio_bd = data.get('gio_bd')
+        gio_kt = data.get('gio_kt')
+        vang = data.get('vang')
+        ly_do = data.get('ly_do')
+
+        if not (van_phong_id and day_of_week and gio_bd and gio_kt and vang is not None):
+            return jsonify({"msg": "Thiếu thông tin cần thiết"}), 400
+
+        session_db = db_manager.get_session()
+        new_lichtrinh = LichTrinh(
+            vanPhong_id=van_phong_id,
+            day_of_week=day_of_week,
+            gio_bd=gio_bd,
+            gio_kt=gio_kt,
+            vang=vang,
+            ly_do=ly_do
+        )
+        session_db.add(new_lichtrinh)
+        session_db.commit()
+
+        return jsonify({
+            "id": new_lichtrinh.id,
+            "vanPhong_id": new_lichtrinh.vanPhong_id,
+            "day_of_week": new_lichtrinh.day_of_week,
+            "gio_bd": new_lichtrinh.gio_bd.isoformat(),
+            "gio_kt": new_lichtrinh.gio_kt.isoformat(),
+            "vang": new_lichtrinh.vang,
+            "ly_do": new_lichtrinh.ly_do
+        }), 201
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lichtrinh/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_lichtrinh(id):
+    """
+    Cập nhật thông tin một lịch trình.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        session_db = db_manager.get_session()
+
+        lichtrinh = session_db.query(LichTrinh).filter(LichTrinh.id == id).first()
+        if not lichtrinh:
+            return jsonify({"msg": "Không tìm thấy lịch trình"}), 404
+
+        if data.get('day_of_week'):
+            lichtrinh.day_of_week = data['day_of_week']
+        if data.get('gio_bd'):
+            lichtrinh.gio_bd = data['gio_bd']
+        if data.get('gio_kt'):
+            lichtrinh.gio_kt = data['gio_kt']
+        if data.get('vang') is not None:
+            lichtrinh.vang = data['vang']
+        if data.get('ly_do'):
+            lichtrinh.ly_do = data['ly_do']
+
+        session_db.commit()
+        return jsonify({"msg": "Cập nhật thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@auth_blueprint.route('/lichtrinh/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_lichtrinh(id):
+    """
+    Xóa một lịch trình.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "bacsi"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        session_db = db_manager.get_session()
+        lichtrinh = session_db.query(LichTrinh).filter(LichTrinh.id == id).first()
+        if not lichtrinh:
+            return jsonify({"msg": "Không tìm thấy lịch trình"}), 404
+
+        session_db.delete(lichtrinh)
+        session_db.commit()
+        return jsonify({"msg": "Xóa thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
