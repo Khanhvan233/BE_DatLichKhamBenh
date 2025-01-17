@@ -383,13 +383,12 @@ def edit_user(user_id):
 @jwt_required()
 def edit_doctor(doctor_id):
     try:
-        # Kiểm tra quyền admin hoặc doctor từ token
+        # Kiểm tra quyền admin từ token
         identity = get_jwt_identity()
         if not identity or "role" not in identity or identity["role"] not in ["admin", "doctor"]:
             return jsonify({"msg": "Bạn không có quyền thực hiện thao tác này"}), 403
 
         session_db = db_manager.get_session()
-
         # Kiểm tra xem doctor có tồn tại không
         doctor = session_db.query(BacSi).filter_by(id=doctor_id).one_or_none()
         if not doctor:
@@ -400,34 +399,11 @@ def edit_doctor(doctor_id):
         doctor.hoc_ham = data.get('hoc_ham', doctor.hoc_ham)
         doctor.ho = data.get('ho', doctor.ho)
         doctor.ten = data.get('ten', doctor.ten)
+        
         doctor.mo_ta = data.get('mo_ta', doctor.mo_ta)
         doctor.ngay_bd_hanh_y = data.get('ngay_bd_hanh_y', doctor.ngay_bd_hanh_y)
         doctor.password = data.get('password', doctor.password)
         doctor.username = data.get('username', doctor.username)
-
-        # Kiểm tra và xử lý ảnh mới
-        image_base64 = data.get('hinh_anh')
-        if image_base64 and image_base64.startswith("data:image"):
-            try:
-                prefix, base64_data = image_base64.split(',', 1)
-                image_data = base64.b64decode(base64_data)
-
-                # Thêm timestamp vào tên tệp
-                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                path = f"doctors/{doctor.username}_profile_{timestamp}.png"
-
-                # Cập nhật hình ảnh lên Firebase Storage
-                url = FirebaseHandler().updateImagePublic(path, image_data, "image/png")
-
-                # Nếu có ảnh cũ, xóa ảnh cũ khỏi Firebase
-                if doctor.hinh_anh:
-                    old_path = doctor.hinh_anh.split("/")[-1]
-                    FirebaseHandler().deleteBlog(f"doctors/{old_path}")
-
-                doctor.hinh_anh = url
-            except Exception as e:
-                return jsonify({"msg": f"Lỗi xử lý ảnh: {str(e)}"}), 400
-
         # Lưu thay đổi vào database
         session_db.commit()
         return jsonify({"msg": "Chỉnh sửa doctor thành công"}), 200
@@ -438,7 +414,6 @@ def edit_doctor(doctor_id):
     except Exception as e:
         session_db.rollback()
         return jsonify({"msg": str(e)}), 500
-
     
 # @auth_blueprint.route('/getAllAppointments', methods=['GET'])
 # @jwt_required()
