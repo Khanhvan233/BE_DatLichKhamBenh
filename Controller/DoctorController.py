@@ -5,6 +5,7 @@ from flask import jsonify
 from flask import abort, redirect
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jwt_identity, get_jwt
@@ -76,7 +77,7 @@ def get_all_doctors():
             "ngay_bd_hanh_y": str(doctor.ngay_bd_hanh_y),
             "username": doctor.username
         } for doctor in doctors]
-
+        print(doctor_list)
         return jsonify(doctor_list), 200
 
     except Exception as e:
@@ -127,6 +128,7 @@ def get_doctors_by_khoa():
 
 
 @doctor_blueprint.route('/searchDoctor', methods=['GET'])
+#nên thêm họ
 def search_doctor():
     try:
         # Lấy từ khóa tìm kiếm từ JSON body request
@@ -164,3 +166,146 @@ def search_doctor():
 
     except Exception as e:
         return jsonify({"msg": "Hệ thống lỗi!", "error": str(e)}), 500
+
+
+# @doctor_blueprint.route('/appointments', methods=['GET'])
+# @jwt_required()
+# def get_appointments():
+#     """
+#     API để lấy danh sách lịch hẹn của văn phòng mà bác sĩ hiện tại quản lý.
+#     """
+#     try:
+#         # Lấy thông tin người dùng từ token
+#         identity = get_jwt_identity()
+#         if not identity or "role" not in identity or identity["role"] != "doctor":
+#             return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+#         bac_si_id = identity.get("userID")
+#         if not bac_si_id:
+#             return jsonify({"msg": "Không xác định được bác sĩ"}), 400
+
+#         # Lấy ID văn phòng từ query hoặc tất cả văn phòng của bác sĩ
+#         vanphong_id = request.args.get('vanphong_id')
+
+#         session_db = db_manager.get_session()
+
+#         if vanphong_id:
+#             # Lấy lịch hẹn của một văn phòng cụ thể
+#             appointments = session_db.query(DatHen).filter(DatHen.vanphong_id == vanphong_id).all()
+#         else:
+#             # Lấy tất cả lịch hẹn của các văn phòng do bác sĩ quản lý
+#             appointments = session_db.query(DatHen).join(VanPhong).filter(VanPhong.bac_si_id == bac_si_id).all()
+
+#         # Chuyển đổi dữ liệu lịch hẹn thành JSON
+#         appointment_list = []
+#         for appointment in appointments:
+#             appointment_list.append({
+#                 "id": appointment.id,
+#                 "user_account_id": appointment.user_account_id,
+#                 "vanphong_id": appointment.vanphong_id,
+#                 "gio_hen": appointment.gio_hen.isoformat(),
+#                 "gio_ket_thuc": appointment.gio_ket_thuc.isoformat() if appointment.gio_ket_thuc else None,
+#                 "trang_thai": appointment.trang_thai,
+#                 "ngay_gio_dat": appointment.ngay_gio_dat.isoformat(),
+#                 "kieu_dat": appointment.kieu_dat
+#             })
+
+#         return jsonify({"appointments": appointment_list}), 200
+
+#     except NoResultFound:
+#         return jsonify({"msg": "Không tìm thấy lịch hẹn"}), 404
+#     except Exception as e:
+#         return jsonify({"msg": str(e)}), 500
+
+@doctor_blueprint.route('/appointments', methods=['GET'])
+@jwt_required()
+def get_appointments():
+    """
+    API để lấy danh sách lịch hẹn của văn phòng mà bác sĩ hiện tại quản lý.
+    """
+    try:
+        # Lấy thông tin người dùng từ token
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] != "doctor":
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        bac_si_id = identity.get("userID")
+        if not bac_si_id:
+            return jsonify({"msg": "Không xác định được bác sĩ"}), 400
+
+        # Lấy ID văn phòng từ query hoặc tất cả văn phòng của bác sĩ
+        vanphong_id = request.args.get('vanphong_id')
+
+        session_db = db_manager.get_session()
+
+        if vanphong_id:
+            # Lấy lịch hẹn của một văn phòng cụ thể và thông tin địa chỉ
+            appointments = (
+                session_db.query(DatHen, VanPhong.dia_chi)
+                .join(VanPhong, DatHen.vanphong_id == VanPhong.id)
+                .filter(DatHen.vanphong_id == vanphong_id)
+                .all()
+            )
+        else:
+            # Lấy tất cả lịch hẹn của các văn phòng do bác sĩ quản lý và thông tin địa chỉ
+            appointments = (
+                session_db.query(DatHen, VanPhong.dia_chi)
+                .join(VanPhong, DatHen.vanphong_id == VanPhong.id)
+                .filter(VanPhong.bac_si_id == bac_si_id)
+                .all()
+            )
+
+        # Chuyển đổi dữ liệu lịch hẹn thành JSON
+        appointment_list = []
+        for appointment, dia_chi in appointments:
+            appointment_list.append({
+                "id": appointment.id,
+                "user_account_id": appointment.user_account_id,
+                "vanphong_id": appointment.vanphong_id,
+                "gio_hen": appointment.gio_hen.isoformat(),
+                "gio_ket_thuc": appointment.gio_ket_thuc.isoformat() if appointment.gio_ket_thuc else None,
+                "trang_thai": appointment.trang_thai,
+                "ngay_gio_dat": appointment.ngay_gio_dat.isoformat(),
+                "kieu_dat": appointment.kieu_dat,
+                "dia_chi": dia_chi  # Thêm địa chỉ văn phòng
+            })
+
+        return jsonify({"appointments": appointment_list}), 200
+
+    except NoResultFound:
+        return jsonify({"msg": "Không tìm thấy lịch hẹn"}), 404
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+    
+@doctor_blueprint.route('/appointments/<int:appointment_id>/update_status', methods=['PUT'])
+@jwt_required()
+def update_appointment_status(appointment_id):
+    """
+    Cập nhật trạng thái lịch hẹn.
+    """
+    try:
+        identity = get_jwt_identity()
+        if not identity or "role" not in identity or identity["role"] not in ["admin", "doctor"]:
+            return jsonify({"msg": "Bạn không có quyền truy cập"}), 403
+
+        data = request.get_json()
+        new_status = data.get('trang_thai')
+
+        if new_status not in ["0", "1", "2"]:
+            return jsonify({"msg": "Trạng thái không hợp lệ"}), 400
+
+        session_db = db_manager.get_session()
+        appointment = session_db.query(DatHen).filter_by(id=appointment_id).one_or_none()
+
+        if not appointment:
+            return jsonify({"msg": "Lịch hẹn không tồn tại"}), 404
+
+        # Cập nhật trạng thái
+        appointment.trang_thai = new_status
+        session_db.commit()
+
+        return jsonify({"msg": "Cập nhật trạng thái thành công"}), 200
+
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
