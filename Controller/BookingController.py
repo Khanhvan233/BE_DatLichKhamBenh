@@ -190,3 +190,56 @@ def getKhoa():
 
     except Exception as e:
         return jsonify({"msg": "Hệ thống lỗi!", "error": str(e)}), 500
+    
+
+@book_blueprint.route('/review', methods=['POST'])
+@jwt_required()
+def review():
+    try:
+        identity = get_jwt_identity()
+        
+        # Kiểm tra xem identity có phải là đối tượng hợp lệ và có trường 'role'
+        if not identity or not isinstance(identity, dict) or "role" not in identity: 
+            return jsonify({"msg": "Token không hợp lệ"}), 400
+
+        data = request.json
+        user_account_id = data['user_account_id']
+        bac_si_id = data['bac_si_id']
+        vo_danh = data['vo_danh']
+        wai_time_rating = data['wai_time_rating']
+        danh_gia_bs = data['danh_gia_bs']
+        danh_gia_tong = data['danh_gia_tong']
+        review_text = data.get('review', None)
+        khuyen_khich = data['khuyen_khich']
+        ngay = datetime.fromisoformat(data['ngay'])  # Chuyển đổi chuỗi thời gian sang đối tượng datetime
+
+        # Kiểm tra sự tồn tại của user_account và bac_si
+        user_account = session_db.query(ClientAccount).filter_by(id=user_account_id).first()
+        bac_si = session_db.query(BacSi).filter_by(id=bac_si_id).first()
+        if not user_account:
+            return jsonify({"error": "Người dùng không tồn tại"}), 404
+        if not bac_si:
+            return jsonify({"error": "Bác sĩ không tồn tại"}), 404
+
+        # Tạo review mới
+        review = Review(
+            user_account_id=user_account_id,
+            bac_si_id=bac_si_id,
+            vo_danh=vo_danh,
+            wai_time_rating=wai_time_rating,
+            danh_gia_bs=danh_gia_bs,
+            danh_gia_tong=danh_gia_tong,
+            review=review_text,
+            khuyen_khich=khuyen_khich,
+            ngay=ngay
+        )
+        session_db.add(review)
+        session_db.commit()
+
+        return jsonify({"message": "Thêm review thành công", "review_id": review.id}), 201
+
+    except Exception as e:
+        session_db.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
